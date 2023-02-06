@@ -41,9 +41,5 @@ class ErrorLine(models.Model):
     id = models.IntegerField(primary_key=True)
     code = models.IntegerField()
     # is_vital = models.BooleanField(default=False)
-    SECTION = (
-        ('stacker', 'stacker'),
-        ('packaging machine', 'packaging machine')
-    )
-    section = models.CharField(max_length=20, choices=SECTION)
+    section = models.CharField(max_length=30)
     description = models.CharField(max_length=200)
