@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from device.models import Device, DeviceType, HistoryData, LineDevice, ErrorLine
+from device.models import Device, DeviceType, HistoryData, ErrorLine
 
 
 class DeviceSerializer(serializers.ModelSerializer):
@@ -11,12 +11,6 @@ class DeviceSerializer(serializers.ModelSerializer):
 class ReportDeviceSerializers(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = '__all__'
-
-
-class LineDeviceSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = LineDevice
         fields = '__all__'
 
 

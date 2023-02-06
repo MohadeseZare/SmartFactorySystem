@@ -37,21 +37,10 @@ class HistoryData(models.Model):
     # data can be numeric or character and add the time one and just one filed for them
 
 
-class LineDevice(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    mac_address = models.CharField(max_length=50)  # the mac_address have 16 bit or 32 bit
-    port = models.CharField(max_length=10, default="")
-    position = models.IntegerField(default="")
-    data = models.CharField(max_length=1050, default="")
-    create = models.DateTimeField(auto_now_add=True)
-    update = models.DateTimeField(auto_now=True)
-
-
 class ErrorLine(models.Model):
     id = models.IntegerField(primary_key=True)
     code = models.IntegerField()
-    is_vital = models.BooleanField(default=False)
+    # is_vital = models.BooleanField(default=False)
     SECTION = (
         ('stacker', 'stacker'),
         ('packaging machine', 'packaging machine')

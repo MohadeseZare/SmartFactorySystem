@@ -22,7 +22,7 @@ def inlocal_Line_daily_static():
     return 'http://178.22.124.147:9017/gatewaya/packaging/dailyStatic/'
 
 
-def inlocal_Line_stopage_time():
+def inlocal_Line_stoppage_time():
     return 'http://178.22.124.147:9017/gatewaya/packaging/stoppageTime/'
 
 

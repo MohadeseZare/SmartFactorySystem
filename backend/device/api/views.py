@@ -15,11 +15,11 @@ import csv
 from ast import literal_eval
 
 from device.api.serializers import *
-from device.models import DeviceType, Device, HistoryData, LineDevice, ErrorLine
+from device.models import DeviceType, Device, HistoryData, ErrorLine
 from .gatewayApis import inlocal_local_getLogs, inlocal_server_getLogs, inserver_getLogs
 from .gatewayApis import inlocal_server_live, inlocal_local_live, inserver_live, inserver_line_live
 from .gatewayApis import inlocal_local_getLogsData, inserver_line_error
-from .gatewayApis import inlocal_Line_daily_static, inlocal_Line_stopage_time, inlocal_Line_log_data
+from .gatewayApis import inlocal_Line_daily_static, inlocal_Line_stoppage_time, inlocal_Line_log_data
 from .gatewayApis import inlocal_Line_error_frequency, inlocal_Line_cumulativeChart
 from factory.models import *
 
@@ -110,10 +110,13 @@ def cal_tile_degree(start_time, end_time, dur_time, mac_address, degree, report_
     return data
 
 
-def cal_tile_stoppage():
-    URL = inlocal_Line_stopage_time()
+def cal_tile_stoppage(start_time, end_time, dur_time, mac_address):
+    URL = inlocal_Line_stoppage_time()
     BODY = {
-
+        "start_time": start_time,
+        "end_time": end_time,
+        "dur_time": dur_time,
+        "mac_addr": mac_address,
     }
     logs_datas = requests.post(url=URL, json=BODY)
     print("body:", BODY)
@@ -169,12 +172,6 @@ class PassThroughRenderer(renderers.BaseRenderer):
         return data
 
 
-class LineDeviceView(generics.ListCreateAPIView):
-    queryset = LineDevice.objects.all()
-    serializer_class = LineDeviceSerializers
-    permission_classes = [AllowAny]
-
-
 class DeviceView(generics.ListCreateAPIView):
     queryset = Device.objects.all()
     serializer_class = DeviceSerializer
@@ -198,13 +195,6 @@ class DeviceView(generics.ListCreateAPIView):
 class DetailDeviceView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Device.objects.all()
     serializer_class = DeviceSerializer
-    permission_classes = [AllowAny]
-    lookup_field = 'id'
-
-
-class DetailLineView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = LineDevice.objects.all()
-    serializer_class = LineDeviceSerializers
     permission_classes = [AllowAny]
     lookup_field = 'id'
 
@@ -393,30 +383,32 @@ class LiveDataView(generics.RetrieveAPIView):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-class TileLiveView(generics.RetrieveAPIView):
-    lookup_field = ['product_line_id']
-
+class PackageLiveView(generics.RetrieveAPIView):
     def get_queryset(self):
         pass
 
     def retrieve(self, request, *args, **kwargs):
-        sensorInLines = LineDevice.objects.get(id=self.kwargs["product_line_id"])
+        try:
+            line_id = self.request.query_params.get('line_id')
+            sensorInLines = Device.objects.get(id=line_id)
+        except:
+            return Response({'error': 'Line Not Found!'}, status=status.HTTP_404_NOT_FOUND)
+
         try:
             live_datas = requests.get(inserver_line_live())
             live_datas = live_datas.json()
-            for sensor in sensorInLines:
-                mac = sensor.mac_address
-                id = sensor.id
-                name = sensor.name
-                for gateway_data in live_datas:
-                    if gateway_data['mac_addr'] == mac:
-                        live_data = {'line_id': id, 'line_name': name,
-                                     'time': str(datetime.fromtimestamp(gateway_data['datatime'])),
-                                     'degree1': gateway_data['degree1'], 'degree2': gateway_data['degree2'],
-                                     'degree3': gateway_data['degree3'], 'degree4': gateway_data['degree4'],
-                                     'degree5': gateway_data['degree5'], 'degree6': gateway_data['degree6']}
-                        json_live = json.dumps(live_data)
-                        json_live_loaded = json.loads(json_live)
+            mac = sensorInLines.mac_address
+            id = sensorInLines.id
+            name = sensorInLines.name
+            for gateway_data in live_datas:
+                if gateway_data['mac_addr'] == mac:
+                    live_data = {'line_id': id, 'line_name': name,
+                                 'time': str(datetime.fromtimestamp(gateway_data['datatime'])),
+                                 'degree1': gateway_data['degree1'], 'degree2': gateway_data['degree2'],
+                                 'degree3': gateway_data['degree3'], 'degree4': gateway_data['degree4'],
+                                 'degree5': gateway_data['degree5'], 'degree6': gateway_data['degree6']}
+                    json_live = json.dumps(live_data)
+                    json_live_loaded = json.loads(json_live)
 
             return Response(json_live_loaded, status=status.HTTP_200_OK)
         except:
@@ -424,71 +416,19 @@ class TileLiveView(generics.RetrieveAPIView):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-# class TileDailyReportView(generics.RetrieveAPIView):
-#     lookup_field = ['product_line_id']
-#
-#     def get_queryset(self):
-#         pass
-#
-#     def retrieve(self, request, *args, **kwargs):
-#         sensorInLines = LineDevice.objects.get(id=self.kwargs['product_line_id'])
-#         try:
-#             logData = call_tile_logs(self.kwargs['start_time'], self.kwargs['end_time'], self.kwargs['dur_time'] * 60,
-#                                      sensorInLines['mac_address'], self.kwargs['degree'], self.kwargs['report_id'])
-#             report_response = []
-#             for log in logData:
-#                 report_json = {'line_id': sensorInLines.id, 'line_name': sensorInLines.name,
-#                                'time': str(datetime.fromtimestamp(log['datatime'])),
-#                                'degree': log['degree']}
-#                 json_live = json.dumps(report_json)
-#                 json_live_loaded = json.loads(json_live)
-#                 report_response.append(json_live_loaded)
-#             return Response(report_response, status=status.HTTP_200_OK)
-#         except:
-#             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-#
-#
-# class TileGetExcelView(generics.RetrieveAPIView):
-#     def get_queryset(self):
-#         pass
-#
-#     def retrieve(self, request, *args, **kwargs):
-#         sensorInLines = LineDevice.objects.get(id=self.kwargs['product_line_id'])
-#         try:
-#             logData = call_tile_logs(self.kwargs['start_time'], self.kwargs['end_time'], self.kwargs['dur_time'] * 60,
-#                                      sensorInLines['mac_address'], self.kwargs['degree'], self.kwargs['report_id'])
-#         except:
-#             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-#         report_file_name = 'report' + str(self.kwargs['start_time']) + str(self.kwargs['end_time']) + '.csv'
-#         if os.path.exists(report_file_name):
-#             os.remove(report_file_name)
-#         report_file = open(report_file_name, 'x')
-#         report_title = ['id', 'name', 'time', 'amount']
-#         report_response = []
-#         for log in logData:
-#             report_lst = [sensorInLines.id, sensorInLines.name,
-#                           str(datetime.fromtimestamp(log['datatime'])), log['degree']]
-#             report_response.append(report_lst)
-#         with open(report_file_name, 'w')as csv_file:
-#             csv_writer = csv.writer(csv_file)
-#             csv_writer.writerow(report_title)
-#             csv_writer.writerows(report_response)
-#         response = HttpResponse(FileWrapper(csv_file), content_type='whatever')
-#         response['Content-Disposition'] = 'attachment; filename="%s"' % report_file_name
-#
-#         return Response(report_response, status=status.HTTP_200_OK)
-
-
 '''Tile degree json and excel views for dailyStatic and cumulativeChart reports.'''
 
 
-class TileDegreeView(generics.RetrieveAPIView):
+class PackageDegreeView(generics.RetrieveAPIView):
     def get_queryset(self):
         pass
 
     def retrieve(self, request, *args, **kwargs):
-
-        sensorInLines = LineDevice.objects.get(id=self.request.query_params.get('product_line_id'))
+        try:
+            line_id = self.request.query_params.get('line_id')
+            sensorInLines = Device.objects.get(id=line_id)
+        except:
+            return Response({'error': 'Line Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
         start_time = datetime.timestamp(
             datetime.fromisoformat(self.request.query_params.get('start_time')))
@@ -519,13 +459,17 @@ class TileDegreeView(generics.RetrieveAPIView):
         return Response(report_response, status=status.HTTP_200_OK)
 
 
-class TileDegreeGetExcelView(generics.RetrieveAPIView):
+class PackageDegreeGetExcelView(generics.RetrieveAPIView):
     def get_queryset(self):
         pass
 
     @action(methods=['get'], detail=True, renderer_classes=(PassThroughRenderer,))
     def retrieve(self, request, *args, **kwargs):
-        sensorInLines = LineDevice.objects.get(id=self.request.query_params.get('product_line_id'))
+        try:
+            line_id = self.request.query_params.get('line_id')
+            sensorInLines = Device.objects.get(id=line_id)
+        except:
+            return Response({'error': 'Line Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
         start_time = datetime.timestamp(
             datetime.fromisoformat(self.request.query_params.get('start_time')))
@@ -549,22 +493,22 @@ class TileDegreeGetExcelView(generics.RetrieveAPIView):
         file_path = 'F:/project_file/' + report_file_name
         if os.path.exists(file_path):
             os.remove(file_path)
-        report_title = ['id', 'name', 'time']
-        for degree_id in degree:
-            report_title.append(f'degree{degree_id}')
-
-        report_response = []
-        for log in data:
-            report_lst = [sensorInLines.id, sensorInLines.name,
-                          log['DataTime']]
-            for degree_id in degree:
-                report_lst.append(log[f'degree{degree_id}'])
-
-            report_response.append(report_lst)
         with open(file_path, 'a+')as csv_file:
             csv_writer = csv.writer(csv_file)
+
+            report_title = ['id', 'name', 'time']
+            for degree_id in degree:
+                report_title.append(f'degree{degree_id}')
             csv_writer.writerow(report_title)
-            csv_writer.writerows(report_response)
+
+            for log in data:
+                print(log)
+                report_lst = [str(sensorInLines.id), sensorInLines.name,
+                              log['DataTime']]
+                for degree_id in degree:
+                    report_lst.append(str(log[f'degree{degree_id}']))
+                print(report_lst)
+                csv_writer.writerow(report_lst)
             csv_file.close()
 
         response = FileResponse(open(file_path, 'rb'))
@@ -580,7 +524,7 @@ class StoppageTimeView(generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         try:
-            sensorInLines = LineDevice.objects.get(id=self.request.query_params.get('product_line_id'))
+            sensorInLines = Device.objects.get(id=self.request.query_params.get('line_id'))
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -590,22 +534,27 @@ class StoppageTimeView(generics.RetrieveAPIView):
         end_time = datetime.timestamp(
             datetime.fromisoformat(self.request.query_params.get('end_time')))
 
-        degree = literal_eval(self.request.query_params.get('degree'))
-
         try:
-            data = cal_tile_degree(int(start_time), int(end_time),
-                                   int(self.request.query_params.get('duration')),
-                                   sensorInLines.mac_address,
-                                   degree,
-                                   self.request.query_params.get('report'))
+            data = cal_tile_stoppage(int(start_time),
+                                     int(end_time),
+                                     int(self.request.query_params.get('duration')),
+                                     sensorInLines.mac_address)
         except:
             return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
 
         report_response = []
-        for log in data:
-            report_json = {'line_id': sensorInLines.id, 'line_name': sensorInLines.name, 'time': log['DataTime']}
-            for degree_id in degree:
-                report_json[f'degree{degree_id}'] = log[f'degree{degree_id}']
+        for report in data:
+            report_json = {'line_id': sensorInLines.id,
+                           'line_name': sensorInLines.name,
+                           'data_time': report['DataTime'],
+                           'alarm_type': []
+                           }
+            if report['type_of_alarm']:
+                for alarm in report['type_of_alarm']:
+                    alarm1 = dict(alarm)
+                    alarm1['start_time'] = str(datetime.fromtimestamp(alarm1['start_time']))
+                    alarm1['end_time'] = str(datetime.fromtimestamp(alarm1['end_time']))
+                    report_json['alarm_type'].append(alarm1)
 
             json_live = json.dumps(report_json)
             json_live_loaded = json.loads(json_live)
@@ -619,7 +568,7 @@ class StoppageTimeGetExcelView(generics.RetrieveAPIView):
 
     @action(methods=['get'], detail=True, renderer_classes=(PassThroughRenderer,))
     def retrieve(self, request, *args, **kwargs):
-        sensorInLines = LineDevice.objects.get(id=self.request.query_params.get('product_line_id'))
+        sensorInLines = Device.objects.get(id=self.request.query_params.get('line_id'))
 
         start_time = datetime.timestamp(
             datetime.fromisoformat(self.request.query_params.get('start_time')))
@@ -627,14 +576,11 @@ class StoppageTimeGetExcelView(generics.RetrieveAPIView):
         end_time = datetime.timestamp(
             datetime.fromisoformat(self.request.query_params.get('end_time')))
 
-        degree = literal_eval(self.request.query_params.get('degree'))
-
         try:
-            data = cal_tile_degree(int(start_time), int(end_time),
-                                   int(self.request.query_params.get('duration')),
-                                   sensorInLines.mac_address,
-                                   degree,
-                                   self.request.query_params.get('report'))
+            data = cal_tile_stoppage(int(start_time),
+                                     int(end_time),
+                                     int(self.request.query_params.get('duration')),
+                                     sensorInLines.mac_address)
         except:
             return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -675,7 +621,7 @@ class LogDataView(generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         try:
-            sensorInLines = LineDevice.objects.get(id=self.request.query_params.get('product_line_id'))
+            sensorInLines = Device.objects.get(id=self.request.query_params.get('line_id'))
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
         start_time = datetime.timestamp(
@@ -684,25 +630,25 @@ class LogDataView(generics.RetrieveAPIView):
         end_time = datetime.timestamp(
             datetime.fromisoformat(self.request.query_params.get('end_time')))
 
-        try:
-            data = cal_line_log(int(start_time),
+        # try:
+        data = cal_line_log(int(start_time),
                                 int(end_time),
                                 int(self.request.query_params.get('duration')),
                                 sensorInLines.mac_address)
-        except:
-            return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
+        # except:
+        # return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
 
         report_response = []
         for log in data:
-            error = ErrorLine.objects.get(id=log['id'])
-            error = ErrorDeviceSerializer(error)
+            # error = ErrorLine.objects.get(code=log['code'])
+            # error = ErrorDeviceSerializer(error)
             report_json = {'line_id': sensorInLines.id,
                            'line_name': sensorInLines.name,
-                           'start_time': datetime.fromtimestamp(log['start_time']),
-                           'end_time': datetime.fromtimestamp(log['end_time']),
-                           'error_id': error['id'],
-                           'error_section': error['section'],
-                           'error_description': error['description'],
+                           'start_time': str(datetime.fromtimestamp(log['start_time'])),
+                           'end_time': str(datetime.fromtimestamp(log['end_time'])),
+                           'error_id': log['code'],
+                           'error_section': log['section'],
+                           'error_description': log['description'],
                            'stoppage_time': log['diff_time']
                            }
 
@@ -719,7 +665,7 @@ class LogDataGetExcelView(generics.RetrieveAPIView):
     @action(methods=['get'], detail=True, renderer_classes=(PassThroughRenderer,))
     def retrieve(self, request, *args, **kwargs):
         try:
-            sensorInLines = LineDevice.objects.get(id=self.request.query_params.get('product_line_id'))
+            sensorInLines = Device.objects.get(id=self.request.query_params.get('line_id'))
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
         start_time = datetime.timestamp(
@@ -738,15 +684,15 @@ class LogDataGetExcelView(generics.RetrieveAPIView):
 
         report_response = []
         for log in data:
-            error = ErrorLine.objects.get(id=log['id'])
-            error = ErrorDeviceSerializer(error)
+            # error = ErrorLine.objects.get(code=log['code'])
+            # error = ErrorDeviceSerializer(error)
             report_response.append([sensorInLines.id,
                                     sensorInLines.name,
-                                    datetime.fromtimestamp(log['start_time']),
-                                    datetime.fromtimestamp(log['end_time']),
-                                    error['id'],
-                                    error['section'],
-                                    error['description'],
+                                    str(datetime.fromtimestamp(log['start_time'])),
+                                    str(datetime.fromtimestamp(log['end_time'])),
+                                    log['code'],
+                                    log['section'],
+                                    log['description'],
                                     log['diff_time']])
 
             report_file_name = 'Degree' + str(self.request.query_params.get('start_time')).replace(':',
@@ -785,7 +731,7 @@ class ErrorFrequencyView(generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         try:
-            sensorInLines = LineDevice.objects.get(id=self.request.query_params.get('product_line_id'))
+            sensorInLines = Device.objects.get(id=self.request.query_params.get('line_id'))
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
         start_time = datetime.timestamp(
@@ -794,9 +740,9 @@ class ErrorFrequencyView(generics.RetrieveAPIView):
         end_time = datetime.timestamp(
             datetime.fromisoformat(self.request.query_params.get('end_time')))
 
-        degree = literal_eval(self.request.query_params.get('degree'))
+        error = literal_eval(self.request.query_params.get('error'))
         try:
-            data = cal_line_error_frequency(degree,
+            data = cal_line_error_frequency(error,
                                             int(start_time),
                                             int(end_time),
                                             int(self.request.query_params.get('duration')),
@@ -806,15 +752,13 @@ class ErrorFrequencyView(generics.RetrieveAPIView):
 
         report_response = []
         for report in data:
-            error = ErrorLine.objects.get(id=report['id'])
-            error = ErrorDeviceSerializer(error)
+            # error = ErrorLine.objects.get(code=report['code'])
+            # error = ErrorDeviceSerializer(error)
             report_json = {'line_id': sensorInLines.id,
                            'line_name': sensorInLines.name,
-                           'start_time': datetime.fromtimestamp(report['start_time']),
-                           'end_time': datetime.fromtimestamp(report['end_time']),
-                           'error_id': error['id'],
-                           'error_section': error['section'],
-                           'error_description': error['description'],
+                           'error_id': report['code'],
+                           'error_section': report['section'],
+                           'error_description': report['description'],
                            'stoppage_time': report['diff_time']
                            }
 
@@ -831,7 +775,7 @@ class ErrorFrequencyGetExcelView(generics.RetrieveAPIView):
     @action(methods=['get'], detail=True, renderer_classes=(PassThroughRenderer,))
     def retrieve(self, request, *args, **kwargs):
         try:
-            sensorInLines = LineDevice.objects.get(id=self.request.query_params.get('product_line_id'))
+            sensorInLines = Device.objects.get(id=self.request.query_params.get('line_id'))
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
         start_time = datetime.timestamp(
@@ -852,15 +796,15 @@ class ErrorFrequencyGetExcelView(generics.RetrieveAPIView):
 
         report_response = []
         for report in data:
-            error = ErrorLine.objects.get(id=report['id'])
-            error = ErrorDeviceSerializer(error)
+            # error = ErrorLine.objects.get(id=report['id'])
+            # error = ErrorDeviceSerializer(error)
             report_response.append([sensorInLines.id,
                                     sensorInLines.name,
-                                    datetime.fromtimestamp(report['start_time']),
-                                    datetime.fromtimestamp(report['end_time']),
-                                    error['id'],
-                                    error['section'],
-                                    error['description'],
+                                    str(datetime.fromtimestamp(report['start_time'])),
+                                    str(datetime.fromtimestamp(report['end_time'])),
+                                    report['code'],
+                                    report['section'],
+                                    report['description'],
                                     report['diff_time']])
 
             report_file_name = 'ErrorFrequency' + str(self.request.query_params.get('start_time')).replace(':', '-') \

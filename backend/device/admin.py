@@ -20,13 +20,8 @@ class HistoryDataAdmin(admin.ModelAdmin):
     )
 
 
-class LineDeviceAdmin(admin.ModelAdmin):
-    list_display = (
-        'id', 'name', 'mac_address', 'create', 'update'
-    )
 #  'product_line_part', 'device_type',
 
 admin.site.register(Device, DeviceAdmin)
 admin.site.register(DeviceType, DeviceTypeAdmin)
 admin.site.register(HistoryData, HistoryDataAdmin)
-admin.site.register(LineDevice, LineDeviceAdmin)
