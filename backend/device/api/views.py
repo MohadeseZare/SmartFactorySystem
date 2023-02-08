@@ -632,9 +632,9 @@ class LogDataView(generics.RetrieveAPIView):
 
         # try:
         data = cal_line_log(int(start_time),
-                                int(end_time),
-                                int(self.request.query_params.get('duration')),
-                                sensorInLines.mac_address)
+                            int(end_time),
+                            int(self.request.query_params.get('duration')),
+                            sensorInLines.mac_address)
         # except:
         # return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -848,6 +848,6 @@ class AddErrorView(generics.RetrieveAPIView):
         for error in error_json:
             if not ErrorLine.objects.filter(id=error['id']):
                 error_create = ErrorDeviceSerializer().create(error)
-                error_ser = ErrorDeviceSerializer(error_create)
-                response.append(error_ser.data)
-        return Response(response, status=status.HTTP_201_CREATED)
+        errors_all = ErrorLine.objects.all()
+        errors_ser = ErrorDeviceSerializer(errors_all, many=True)
+        return Response(errors_ser.data, status=status.HTTP_201_CREATED)
