@@ -1,5 +1,6 @@
 import traceback
 from datetime import datetime
+from dateutil import parser
 from django.utils.dateparse import parse_datetime
 from django.http import HttpResponse, FileResponse
 import json
@@ -145,14 +146,13 @@ def cal_line_log(start_time, end_time, dur_time, mac_address):
     return data
 
 
-def cal_line_error_frequency(error_id, start_time, end_time, dur_time, mac_address):
+def cal_line_error_frequency(error_id, start_time, end_time, mac_address):
     URL = inlocal_Line_error_frequency()
 
     BODY = {
         "error": error_id,
         "start_time": start_time,
         "end_time": end_time,
-        "dur_time": dur_time,
         "mac_addr": mac_address,
     }
     logs_datas = requests.post(url=URL, json=BODY)
@@ -431,10 +431,10 @@ class PackageDegreeView(generics.RetrieveAPIView):
             return Response({'error': 'Line Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
         start_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('start_time')))
+            parser.parse(self.request.query_params.get('start_time')))
 
         end_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('end_time')))
+            parser.parse(self.request.query_params.get('end_time')))
 
         degree = literal_eval(self.request.query_params.get('degree'))
 
@@ -472,10 +472,10 @@ class PackageDegreeGetExcelView(generics.RetrieveAPIView):
             return Response({'error': 'Line Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
         start_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('start_time')))
+            parser.parse(self.request.query_params.get('start_time')))
 
         end_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('end_time')))
+            parser.parse(self.request.query_params.get('end_time')))
 
         degree = literal_eval(self.request.query_params.get('degree'))
 
@@ -529,18 +529,18 @@ class StoppageTimeView(generics.RetrieveAPIView):
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
 
         start_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('start_time')))
+            parser.parse(self.request.query_params.get('start_time')))
 
         end_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('end_time')))
+            parser.parse(self.request.query_params.get('end_time')))
 
-        try:
-            data = cal_tile_stoppage(int(start_time),
-                                     int(end_time),
-                                     int(self.request.query_params.get('duration')),
-                                     sensorInLines.mac_address)
-        except:
-            return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
+        # try:
+        data = cal_tile_stoppage(int(start_time),
+                                 int(end_time),
+                                 int(self.request.query_params.get('duration')),
+                                 sensorInLines.mac_address)
+        # except:
+        #     return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
 
         report_response = []
         for report in data:
@@ -571,10 +571,10 @@ class StoppageTimeGetExcelView(generics.RetrieveAPIView):
         sensorInLines = Device.objects.get(id=self.request.query_params.get('line_id'))
 
         start_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('start_time')))
+            parser.parse(self.request.query_params.get('start_time')))
 
         end_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('end_time')))
+            parser.parse(self.request.query_params.get('end_time')))
 
         try:
             data = cal_tile_stoppage(int(start_time),
@@ -625,10 +625,10 @@ class LogDataView(generics.RetrieveAPIView):
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
         start_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('start_time')))
+            parser.parse(self.request.query_params.get('start_time')))
 
         end_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('end_time')))
+            parser.parse(self.request.query_params.get('end_time')))
 
         # try:
         data = cal_line_log(int(start_time),
@@ -669,10 +669,10 @@ class LogDataGetExcelView(generics.RetrieveAPIView):
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
         start_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('start_time')))
+            parser.parse(self.request.query_params.get('start_time')))
 
         end_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('end_time')))
+            parser.parse(self.request.query_params.get('end_time')))
 
         try:
             data = cal_line_log(int(start_time),
@@ -735,17 +735,16 @@ class ErrorFrequencyView(generics.RetrieveAPIView):
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
         start_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('start_time')))
+            parser.parse(self.request.query_params.get('start_time')))
 
         end_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('end_time')))
+            parser.parse(self.request.query_params.get('end_time')))
 
         error = literal_eval(self.request.query_params.get('error'))
         try:
             data = cal_line_error_frequency(error,
                                             int(start_time),
                                             int(end_time),
-                                            int(self.request.query_params.get('duration')),
                                             sensorInLines.mac_address)
         except:
             return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
@@ -779,17 +778,16 @@ class ErrorFrequencyGetExcelView(generics.RetrieveAPIView):
         except:
             return Response({'Error': 'Sensor Not Found!'}, status=status.HTTP_404_NOT_FOUND)
         start_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('start_time')))
+            parser.parse(self.request.query_params.get('start_time')))
 
         end_time = datetime.timestamp(
-            datetime.fromisoformat(self.request.query_params.get('end_time')))
+            parser.parse(self.request.query_params.get('end_time')))
 
         degree = literal_eval(self.request.query_params.get('degree'))
         try:
             data = cal_line_error_frequency(degree,
                                             int(start_time),
                                             int(end_time),
-                                            int(self.request.query_params.get('duration')),
                                             sensorInLines.mac_address)
         except:
             return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
