@@ -53,7 +53,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         non_null_data = {}
         for key, value in validated_data.items():
-            if value and key != 'role':
+            if value:
                 non_null_data[key] = value
         user = super().update(instance, non_null_data)
         user.updated_at = timezone.now()
