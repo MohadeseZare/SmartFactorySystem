@@ -5,22 +5,22 @@ from . import models
 
 
 # Serialize role model class.
-class RoleSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = models.Roles
-        fields = ('id', 'name', 'is_predefined', 'description')
-
-    def update(self, instance, validated_data):
-        non_null_data = {}
-        for key, value in validated_data.items():
-            if value:
-                non_null_data[key] = value
-        role = super().update(instance, non_null_data)
-        role.updated_at = timezone.now()
-        role.save()
-        return role
+# class RoleSerializer(serializers.ModelSerializer):
+#     id = serializers.CharField(read_only=True)
+#
+#     class Meta:
+#         model = models.Roles
+#         fields = ('id', 'name', 'is_predefined', 'description')
+#
+#     def update(self, instance, validated_data):
+#         non_null_data = {}
+#         for key, value in validated_data.items():
+#             if value:
+#                 non_null_data[key] = value
+#         role = super().update(instance, non_null_data)
+#         role.updated_at = timezone.now()
+#         role.save()
+#         return role
 
 
 # only serialize data for authentication (django User model).
@@ -41,13 +41,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 # serialize other user information.
 class ProfileSerializer(serializers.ModelSerializer):
-    role = RoleSerializer(many=True, read_only=True)
     username = UserSerializer(read_only=True)
 
     class Meta:
         model = models.Users
         fields = (
-            'username', "first_name", "last_name", "phone_number", "email",'created_at', "role")
+            'username', "first_name", "last_name", "phone_number", "email", 'created_at')
         read_only_fields = ('username', 'created_at')
 
     def update(self, instance, validated_data):

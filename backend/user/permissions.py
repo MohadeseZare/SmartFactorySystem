@@ -2,6 +2,7 @@ from rest_framework import permissions
 from django.contrib.auth.models import User
 
 
+
 class IsOwner(permissions.BasePermission):
     def has_permission(self, request, view):
         try:
@@ -17,10 +18,11 @@ class IsOwner(permissions.BasePermission):
         else:
             return True
 
-
-class IsSuperUser(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.user.is_superuser:
-            return True
-        else:
-            return False
+#
+# class IsAdmin(permissions.BasePermission):
+#     def has_permission(self, request, view):
+#         if request.user.:
+#             return True
+#         else:
+#             return False
+#

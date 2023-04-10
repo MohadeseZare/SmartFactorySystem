@@ -442,10 +442,16 @@ class PackageDegreeView(generics.RetrieveAPIView):
 
         report_response = []
         for log in data:
+            sum = 0
             report_json = {'line_id': sensorInLines.id, 'line_name': sensorInLines.name, 'time': log['DataTime']}
             for degree_id in degree:
                 report_json[f'degree{degree_id}'] = log[f'degree{degree_id}']
-
+                # print(log[f'degree{degree_id}'])
+                if log[f'degree{degree_id}']:
+                    sum += log[f'degree{degree_id}']
+                else:
+                    pass
+            report_json['Sum'] = sum
             json_live = json.dumps(report_json)
             json_live_loaded = json.loads(json_live)
             report_response.append(json_live_loaded)

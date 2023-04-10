@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: superuser
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: smartfactorysystem
+    volumes:
+      - dbdata:/var/lib/postgresql/data/
+
+  web:
+    build: .
+    restart: always
+
+    volumes:
+      - .:/code
+    ports:
+      - "7000:7000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=smartfactorysystem
+      - DB_USER=superuser
+      - DB_PASSWORD=123
+
+volumes:
+  dbdata:

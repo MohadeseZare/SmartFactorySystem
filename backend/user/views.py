@@ -51,35 +51,46 @@ def create_user(request):
     ser = serializers.UserSerializer(data={'username': request.data['username'], 'password': request.data['password']})
     if ser.is_valid():
         ser.save()
-        user = models.User.objects.get(username=request.data['username'])
-        refresh_token = RefreshToken.for_user(user)
-        access_token = AccessToken.for_user(user)
+        user = User.objects.get(username=request.data['username'])
         final_json = {}
         for key in ser.data:
             final_json[key] = ser.data[key]
-        final_json['refresh'] = str(refresh_token)
-        final_json['access'] = str(access_token)
+        factory_member = facmodels.FactoryMember.objects.get(
+            member=user.id)
         try:
-            factory_member = facmodels.FactoryMember.objects.get(
-                member=User.objects.get(username=request.data['username']).id)
-            factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
-            final_json['allowed_factories'] = factory_member_ser['factory'].value
-            if len(factory_member_ser['factory'].value) <= 1:
-                final_json['allowed_sections'] = factory_member_ser['product_line_id'].value
-            else:
-                final_json['allowed_sections'] = 0
+            admin = facmodels.FactoryMember.objects.get(member=User.objects.get(username=request.user.username))
+            admin_ser = facserializers.FactoryMemberSerializers(admin)
+            if request.data['factory'] in admin_ser['factory'].value:
+                factory = facmodels.Factory.objects.get(id=request.data['factory'])
+                factory_member.factory.add(factory)
         except:
-            final_json['allowed_factories'] = []
-            final_json['allowed_sections'] = []
-        user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
+            user.delete()
+            return Response({'error': 'factory not found!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            factory_member.product_line.set(request.data['sections'])
+            # for section in request.data['section']:
+            #     section = facmodels.ProductLine.objects.get(id=section)
+            #     factory_member.product_line.add(section)
+        except:
+            user.delete()
+            return Response({'error': 'section not found!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
+
+        final_json['allowed_factories'] = factory_member_ser['factory'].value
+        final_json['allowed_sections'] = factory_member_ser['product_line'].value
+
+        users_user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
         data2 = serializers.ProfileSerializer(request.data['user_credential'])
-        ser = serializers.ProfileSerializer().update(user, data2.data)
+        try:
+            ser = serializers.ProfileSerializer().update(users_user, data2.data)
+        except:
+            user.delete()
+            return Response({'error': 'this email has used before!'}, status=status.HTTP_400_BAD_REQUEST)
         user_ser = serializers.ProfileSerializer(ser)
-        # if not user_ser.is_valid():
-        #     return Response({'error': 'Email Has Used Before'}, status=status.HTTP_400_BAD_REQUEST)
 
         final_json['user_credential'] = user_ser.data
-        # return Response(user_ser.data, status=status.HTTP_200_OK)
 
         json_ = json.dumps(final_json)
         json_loaded = json.loads(json_)
@@ -95,32 +106,44 @@ def login(request):
     if authenticate(username=request.data['username'], password=request.data['password']):
         user = models.User.objects.get(username=request.data['username'])
         ser = serializers.UserSerializer(user)
-        factory_member = facmodels.FactoryMember.objects.get(
-            member=User.objects.get(username=request.data['username']).id)
+        users_user = models.Users.objects.get(username=ser['id'].value)
+        users_user_ser = serializers.ProfileSerializer(users_user)
+        factory_member = facmodels.FactoryMember.objects.get(member=user)
         factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
         refresh_token = RefreshToken.for_user(user)
         access_token = AccessToken.for_user(user)
         final_json = {}
         for key in ser.data:
             final_json[key] = ser.data[key]
+        final_json['first_name'] = users_user_ser['first_name'].value
+        final_json['last_name'] = users_user_ser['last_name'].value
         final_json['refresh'] = str(refresh_token)
         final_json['access'] = str(access_token)
-        final_json['allowed_factories'] = factory_member_ser['factory'].value
-        if len(factory_member_ser['factory'].value) <= 1:
-            final_json['allowed_sections'] = factory_member_ser['product_line_id'].value
-        else:
-            final_json['allowed_sections'] = 0
-        user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
-        user_ser = serializers.ProfileSerializer(user)
-        admin_id = models.Roles.objects.get(name='admin').id
-        for role in user_ser.data['role']:
-            if role['id'] == str(admin_id):
-                final_json['is_admin'] = True
+        final_json['allowed_factories'] = []
+        final_json['allowed_sections'] = []
+        try:
+            for factory in factory_member_ser['factory'].value:
+                fac_ser = facserializers.FactorySerializers(facmodels.Factory.objects.get(id=factory))
+                final_json['allowed_factories'].append(fac_ser['name'].value)
+
+            if len(factory_member_ser['factory'].value) <= 1:
+                for section in factory_member_ser['product_line'].value:
+                    sec_ser = facserializers.ProductLineSerializers(facmodels.ProductLine.objects.get(id=section))
+                    final_json['allowed_sections'].append(sec_ser['name'].value)
+
             else:
-                final_json['is_admin'] = False
+                final_json['allowed_sections'] = 0
+        except:
+            final_json['allowed_factories'] = []
+            final_json['allowed_sections'] = []
+        ALL = facmodels.ProductLine.objects.get(name='ALL').id
+        if ALL in factory_member_ser['product_line'].value:
+            final_json['is_admin'] = True
+        else:
+            final_json['is_admin'] = False
         json_ = json.dumps(final_json)
         json_loaded = json.loads(json_)
-        return Response(json_loaded, status=status.HTTP_201_CREATED)
+        return Response(json_loaded, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'authentication failed'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -129,83 +152,81 @@ def login(request):
 @permission_classes([AllowAny, ])
 def profile(request):
     try:
-        user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
+        user = models.Users.objects.get(username_id=request.user.id)
         ser = serializers.ProfileSerializer(user)
+        final_json = {}
+        for key in ser.data:
+            final_json[key] = ser.data[key]
+        factory_member = facmodels.FactoryMember.objects.get(member=request.user.id)
+        factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
+        final_json['allowed_factories'] = factory_member_ser['factory'].value
+        final_json['allowed_sections'] = factory_member_ser['product_line'].value
     except:
         return Response({"error": "User Not Found!"}, status=status.HTTP_404_NOT_FOUND)
-    return Response(ser.data, status=status.HTTP_200_OK)
-
-
-# @api_view(['GET', 'POST'])
-# @permission_classes([AllowAny, ])
-# def is_admin(request):
-#     try:
-#         user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
-#         user_ser = serializers.ProfileSerializer(user)
-#     except:
-#         return Response({'error': 'User not found!'}, status=status.HTTP_404_NOT_FOUND)
-#     admin_id = models.Roles.objects.get(name='admin').id
-#     for role in user_ser.data['role']:
-#         if role['id'] == str(admin_id):
-#             return Response({'is_admin': 'true'})
-#     return Response({'is_admin': 'False'})
+    return Response(final_json, status=status.HTTP_200_OK)
 
 
 @api_view(['GET', 'POST'])
 @permission_classes((AllowAny,))
 def users_list(request, pk):
-    if pk != '0':
-        try:
-            user = models.Users.objects.get(pk=pk)
-            ser = serializers.ProfileSerializer(user)
-        except:
-            return Response({"error": "User Not Found!"}, status=status.HTTP_404_NOT_FOUND)
-    elif pk == '0':
-        user = models.Users.objects.all()
-        ser = serializers.ProfileSerializer(user, many=True)
+    try:
+        user = models.Users.objects.get(pk=pk)
+        ser = serializers.ProfileSerializer(user)
+        final_json = {}
+        for key in ser.data:
+            final_json[key] = ser.data[key]
+        factory_member = facmodels.FactoryMember.objects.get(
+            member=User.objects.get(username=request.data['username']).id)
+        factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
+        final_json['allowed_factories'] = factory_member_ser['allowed_factories']
+        final_json['allowed_sections'] = factory_member_ser['allowed_sections']
+        json_ = json.dumps(final_json)
+        json_loaded = json.loads(json_)
+    except:
+        return Response({"error": "User Not Found!"}, status=status.HTTP_404_NOT_FOUND)
+    return Response(json_loaded, status=status.HTTP_200_OK)
 
-    else:
-        return Response({"error": "Bad request!"}, status=status.HTTP_404_NOT_FOUND)
-    return Response(ser.data, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'POST'])
+@permission_classes((AllowAny,))
+def users_list_all(request):
+    admin = request.user.id
+    try:
+        admin_user = facmodels.FactoryMember.objects.get(member=admin)
+    except:
+        return Response({'error': 'bad Request'}, status=status.HTTP_400_BAD_REQUEST)
+    admin_ser = facserializers.FactoryMemberSerializers(admin_user)
+    resp = {}
+    for factory in admin_ser['factory'].value:
+        resp[f'{factory}'] = []
+        if "sections" in request.data:
+            for sections in request.data['sections']:
+                user_list = facmodels.FactoryMember.objects.filter(factory__id__icontains=factory,
+                                                                   product_line__id__icontains=sections)
+                user_list_ser = facserializers.FactoryMemberSerializers(user_list, many=True)
+                resp[f'{factory}'].append({sections: user_list_ser.data})
+
+        else:
+            user_list = facmodels.FactoryMember.objects.filter(factory__id__icontains=factory)
+            user_list_ser = facserializers.FactoryMemberSerializers(user_list, many=True)
+            resp[f'{factory}'] = user_list_ser.data
+    return Response(resp, status=status.HTTP_200_OK)
 
 
-@api_view(['PUT', 'DELETE'])
+@api_view(['PUT'])
 @permission_classes([AllowAny, ])
 def update_user(request):
     try:
         user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
     except:
         return Response({"error": "User Not Found!"}, status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'PUT':
-        if 'role' in list(request.data.keys()):
-            if request.data['role']:
-                return Response({'error': "Role Can't Be Defined By User"}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            data2 = serializers.ProfileSerializer(request.data)
-            ser = serializers.ProfileSerializer().update(user, data2.data)
-            user_ser = serializers.ProfileSerializer(ser)
-        except:
-            return Response({'error': 'Email Has Used Before'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(user_ser.data, status=status.HTTP_200_OK)
-    elif request.method == 'DELETE':
-        user = User.objects.get(username=request.data['username'])
-        user.delete()
-        return
 
-
-@api_view(['PUT'])
-@permission_classes([AllowAny, ])
-def email_verification(request):
     try:
-        user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
-    except:
-        return Response({"error": "User Not Found!"}, status=status.HTTP_404_NOT_FOUND)
-    try:
-        ser = serializers.ProfileSerializer().email_verification(user, request.data)
+        data2 = serializers.ProfileSerializer(request.data)
+        ser = serializers.ProfileSerializer().update(user, data2.data)
         user_ser = serializers.ProfileSerializer(ser)
     except:
         return Response({'error': 'Email Has Used Before'}, status=status.HTTP_400_BAD_REQUEST)
-
     return Response(user_ser.data, status=status.HTTP_200_OK)
 
 
@@ -218,10 +239,6 @@ def update_user_admin(request):
         return Response({"error": "User Not Found!"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'PUT':
-        # if 'role' in list(request.data.keys()):
-        #     if request.data['role']:
-        #         return Response({'error': "Role Can't Be Defined from this section."},
-        #                         status=status.HTTP_400_BAD_REQUEST)
         data2 = serializers.ProfileSerializer(request.data)
         ser = serializers.ProfileSerializer().update(user, data2.data)
         user_ser = serializers.ProfileSerializer(ser)
@@ -230,56 +247,3 @@ def update_user_admin(request):
         user = User.objects.get(username=request.data['username'])
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# @api_view(["PUT"])
-# @permission_classes([AllowAny, ])
-# def role_allocation(request):
-#     try:
-#         user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
-#     except:
-#         return Response({"error": "User Not Found!"}, status=status.HTTP_404_NOT_FOUND)
-#     try:
-#         user.role.add(request.data['role'])
-#         user_ser = serializers.ProfileSerializer(user)
-#         return Response(user_ser.data, status=status.HTTP_200_OK)
-#     except:
-#         return Response({'error': 'Role Not Defined'}, status=status.HTTP_400_BAD_REQUEST)
-#
-
-@api_view(['POST'])
-@permission_classes([AllowAny, ])
-def role_creation(request):
-    ser = serializers.RoleSerializer(data=request.data)
-    if ser.is_valid():
-        ser.save()
-        return Response(ser.data, status=status.HTTP_201_CREATED)
-    else:
-        return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT', 'DELETE'])
-@permission_classes([AllowAny, ])
-def update_role(request):
-    try:
-        role = models.Roles.objects.get(id=request.data['id'])
-    except:
-        return Response({"error": "Role Not Found!"}, status=status.HTTP_404_NOT_FOUND)
-    if request.method == 'PUT':
-        data2 = serializers.RoleSerializer(request.data)
-        print(data2)
-        ser = serializers.RoleSerializer().update(role, data2.data)
-        role_ser = serializers.RoleSerializer(ser)
-        return Response(role_ser.data, status=status.HTTP_200_OK)
-    elif request.method == 'DELETE':
-        role = models.Roles.objects.get(id=request.data['id'])
-        role.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@api_view(['GET', 'POST'])
-@permission_classes([AllowAny, ])
-def view_role(request):
-    role = models.Roles.objects.all()
-    role_ser = serializers.RoleSerializer(role, many=True)
-    return Response(role_ser.data, status=status.HTTP_200_OK)

@@ -1,13 +1,18 @@
 from django.utils.translation import gettext_lazy as _
 from django.db import models
-from user.models import Users
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Factory(models.Model):
+    class Meta:
+        unique_together = (('id', 'name'),)
+
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=150)
     address = models.CharField(max_length=255)
-    owner = models.ForeignKey(to=Users, on_delete=models.CASCADE)
+    owner = models.ForeignKey(to=User, on_delete=models.CASCADE)
     create = models.DateTimeField(auto_now_add=True)
     update = models.DateTimeField(auto_now=True)
     delete = models.DateTimeField(null=True, blank=True)
@@ -28,6 +33,9 @@ class Shift(models.Model):
 
 
 class ProductLine(models.Model):
+    class Meta:
+        unique_together = (('id', 'name'),)
+
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=150)
     description = models.CharField(max_length=255)
@@ -58,9 +66,9 @@ class ProductLinePart2(models.Model):
 
 
 class FactoryMember(models.Model):
-    member = models.OneToOneField(to=Users, primary_key=True, on_delete=models.CASCADE)
-    factory = models.ManyToManyField(Factory, blank=True)
-    product_line_id = models.ManyToManyField(to=ProductLine, blank=True)
+    member = models.OneToOneField(to=User, primary_key=True, on_delete=models.CASCADE)
+    factory = models.ManyToManyField(Factory, blank=True, default=[])
+    product_line = models.ManyToManyField(to=ProductLine, blank=True, default=[])
     STATUS = (
         ('ENABLED', 'ENABLED'),
         ('DISABLED', 'DISABLED')
@@ -68,10 +76,16 @@ class FactoryMember(models.Model):
     status = models.CharField(max_length=10, choices=STATUS, default='ENABLED')
 
     def factories(self):
-        return "\n".join([p.products for p in self.factory.all()])
+        return "\n".join([p.name for p in self.factory.all()])
 
     def product_lines(self):
-        return "\n".join([p.products for p in self.product_line_id.all()])
+        return "\n".join([p.name for p in self.product_line.all()])
+
+    @receiver(post_save, sender=User)  # create Users instance after creation of django User.
+    def create_user_profile(sender, instance, created, **kwargs):
+        if created:
+            n_user = FactoryMember.objects.create(member=instance)
+            n_user.save()
 
 
 class SettingsType(models.Model):
