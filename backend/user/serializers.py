@@ -41,7 +41,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 # serialize other user information.
 class ProfileSerializer(serializers.ModelSerializer):
-    username = UserSerializer(read_only=True)
 
     class Meta:
         model = models.Users

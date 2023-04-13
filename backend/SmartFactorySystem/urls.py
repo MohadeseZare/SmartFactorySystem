@@ -20,5 +20,9 @@ urlpatterns = [
     path('factory/admin/', admin.site.urls),
     path('factory/user/', include('user.urls')),
     path('factory/factory/', include('factory.api.urls')),
-    path('factory/device/', include('device.api.urls'))
+    path('factory/device/', include('device.api.urls')),
+    path('newbackend/admin/', admin.site.urls),
+    path('newbackend/user/', include('user.urls')),
+    path('newbackend/factory/', include('factory.api.urls')),
+    path('newbackend/device/', include('device.api.urls'))
 ]

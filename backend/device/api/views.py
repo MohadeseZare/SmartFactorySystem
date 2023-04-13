@@ -501,7 +501,7 @@ class PackageDegreeGetExcelView(generics.RetrieveAPIView):
                 sum_dict[f'degree{degree_id}'] += log[f'degree{degree_id}']
                 degree_sum += log[f'degree{degree_id}']
 
-            report_json['Sum'] = degree_sum
+            report_json['sum'] = degree_sum
             report_response.append(report_json)
         total = {'line_id': 'TOTAL', 'line_name': None, 'time': None, 'Sum': 0}
         for degree_id in degree:
