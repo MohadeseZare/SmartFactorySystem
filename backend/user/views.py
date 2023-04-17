@@ -57,15 +57,15 @@ def create_user(request):
             final_json[key] = ser.data[key]
         factory_member = facmodels.FactoryMember.objects.get(
             member=user.id)
-        try:
-            admin = facmodels.FactoryMember.objects.get(member=User.objects.get(username=request.user.username))
-            admin_ser = facserializers.FactoryMemberSerializers(admin)
-            if request.data['factory'] in admin_ser['factory'].value:
-                factory = facmodels.Factory.objects.get(id=request.data['factory'])
-                factory_member.factory.set(factory)
-        except:
-            user.delete()
-            return Response({'error': 'factory not found!'}, status=status.HTTP_400_BAD_REQUEST)
+        # try:
+        admin = facmodels.FactoryMember.objects.get(member=User.objects.get(username=request.user.username))
+        admin_ser = facserializers.FactoryMemberSerializers(admin)
+        if request.data['factory'] in admin_ser['factory'].value:
+            factory = facmodels.Factory.objects.get(id=request.data['factory'])
+            factory_member.factory.add(factory)
+        # except:
+        #     user.delete()
+        #     return Response({'error': 'factory not found!'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             factory_member.product_line.set(request.data['sections'])
@@ -168,8 +168,10 @@ def users_list(request, pk):
         user = models.Users.objects.get(id=pk)
         ser = serializers.ProfileSerializer(user)
         final_json = {}
+        final_json['id'] = pk
         for key in ser.data:
             final_json[key] = ser.data[key]
+        final_json['username'] = User.objects.get(id=pk).username
         factory_member = facmodels.FactoryMember.objects.get(member=pk)
         factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
         final_json['allowed_factories'] = factory_member_ser['factory'].value
@@ -197,12 +199,13 @@ def users_list_all(request):
             for sections in request.data['sections']:
                 user_list = facmodels.FactoryMember.objects.filter(factory__id__icontains=factory,
                                                                    product_line__id__icontains=sections,
-                                                                   status="ENABlED")
+                                                                   status="ENABLED")
                 user_list_ser = facserializers.FactoryMemberSerializers(user_list, many=True)
                 resp[f'{factory}'].append({sections: user_list_ser.data})
 
         else:
-            user_list = facmodels.FactoryMember.objects.filter(factory__id__icontains=factory)
+            user_list = facmodels.FactoryMember.objects.filter(factory__id__icontains=factory,
+                                                               status="ENABLED")
             user_list_ser = facserializers.FactoryMemberSerializers(user_list, many=True)
             resp[f'{factory}'] = user_list_ser.data
     return Response(resp, status=status.HTTP_200_OK)
@@ -235,36 +238,42 @@ def update_user_admin(request):
 
     if request.method == 'PUT':
         final_json = {}
-        try:
-            admin = facmodels.FactoryMember.objects.get(member=User.objects.get(username=request.user.username))
-            admin_ser = facserializers.FactoryMemberSerializers(admin)
-            if request.data['factory'] in admin_ser['factory'].value:
-                factory = facmodels.Factory.objects.get(id=request.data['factory'])
-                user.factory.set(factory)
-        except:
-            return Response({'error': 'factory not found!'}, status=status.HTTP_400_BAD_REQUEST)
+
+        factory_member = facmodels.FactoryMember.objects.get(
+            member=User.objects.get(username=request.data['username']).id)
+        print(factory_member.member)
 
         try:
-            user.product_line.set(request.data['sections'])
+            factory_member.product_line.clear()
+            for sections in request.data['sections']:
+                factory_member.product_line.add(sections)
+            factory_member.save()
+
         except:
             return Response({'error': 'section not found!'}, status=status.HTTP_400_BAD_REQUEST)
-
-        factory_member_ser = facserializers.FactoryMemberSerializers(user)
-
+        factory_member = facmodels.FactoryMember.objects.get(
+            member=User.objects.get(username=request.data['username']).id)
+        print(factory_member)
+        factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
+        print(factory_member_ser['product_line'].value)
         final_json['allowed_factories'] = factory_member_ser['factory'].value
         final_json['allowed_sections'] = factory_member_ser['product_line'].value
 
-        users_user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
         data2 = serializers.ProfileSerializer(request.data['user_credential'])
         try:
-            ser = serializers.ProfileSerializer().update(users_user, data2.data)
+            ser = serializers.ProfileSerializer().update(user, data2.data)
         except:
             return Response({'error': 'this email has used before!'}, status=status.HTTP_400_BAD_REQUEST)
         user_ser = serializers.ProfileSerializer(ser)
 
         final_json['user_credential'] = user_ser.data
-        return Response(user_ser.data, status=status.HTTP_200_OK)
+
+        json_ = json.dumps(final_json)
+        json_loaded = json.loads(json_)
+        return Response(json_loaded, status=status.HTTP_201_CREATED)
+
     elif request.method == 'DELETE':
-        user = User.objects.get(username=request.data['username'])
-        user.delete()
+        user = facmodels.FactoryMember.objects.get(member=User.objects.get(username=request.data['username']).id)
+        user.status = 'DISABLED'
+        user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)

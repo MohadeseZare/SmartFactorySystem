@@ -68,7 +68,7 @@ class ProductLinePart2(models.Model):
 class FactoryMember(models.Model):
     member = models.OneToOneField(to=User, primary_key=True, on_delete=models.CASCADE)
     factory = models.ManyToManyField(Factory, blank=True, default=[])
-    product_line = models.ManyToManyField(to=ProductLine, blank=True, default=[])
+    product_line = models.ManyToManyField(to=ProductLine, blank=True, default=[], db_constraint=False)
     STATUS = (
         ('ENABLED', 'ENABLED'),
         ('DISABLED', 'DISABLED')

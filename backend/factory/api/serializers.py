@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from factory.models import Factory, FactoryMember, Shift, ProductLine, ProductLinePart, ProductLinePart2, Settings, SettingsType
+from factory.models import Factory, FactoryMember, Shift, ProductLine, ProductLinePart, ProductLinePart2, Settings, \
+    SettingsType
+from user import serializers as user
 
 
 class FactorySerializers(serializers.ModelSerializer):
@@ -9,9 +11,12 @@ class FactorySerializers(serializers.ModelSerializer):
 
 
 class FactoryMemberSerializers(serializers.ModelSerializer):
+    member = user.UserSerializer()
+
     class Meta:
         model = FactoryMember
         fields = '__all__'
+        # depth = 1
 
 
 class ProductLineSerializers(serializers.ModelSerializer):
