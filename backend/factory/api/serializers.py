@@ -18,6 +18,12 @@ class FactoryMemberSerializers(serializers.ModelSerializer):
         fields = '__all__'
         # depth = 1
 
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        user.save()
+        return user
+
+
 
 class ProductLineSerializers(serializers.ModelSerializer):
     class Meta:

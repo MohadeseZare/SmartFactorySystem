@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
+default_app_config = 'user.initialize.AdminUserStartup'
+
 MIDDLEWARE = [
     'django.middleware.http.ConditionalGetMiddleware',
     'corsheaders.middleware.CorsMiddleware',

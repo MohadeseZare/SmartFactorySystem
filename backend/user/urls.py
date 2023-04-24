@@ -19,6 +19,6 @@ urlpatterns = [
     # path('admin_update_role/', views.update_role),
     # path('admin_roles/', views.view_role),
     # path('admin_allocate_role/', views.role_allocation),
-    path('admin_user_update/', views.update_user_admin)
-
+    path('admin_user_update/', views.update_user_admin),
+    path('fu/first_user/', views.first_user)
 ]

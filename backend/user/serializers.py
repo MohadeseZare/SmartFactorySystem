@@ -48,6 +48,11 @@ class ProfileSerializer(serializers.ModelSerializer):
             'username', "first_name", "last_name", "phone_number", "email", 'created_at')
         read_only_fields = ('username', 'created_at')
 
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        user.save()
+        return user
+
     def update(self, instance, validated_data):
         non_null_data = {}
         for key, value in validated_data.items():

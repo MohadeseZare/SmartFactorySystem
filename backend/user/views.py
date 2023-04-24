@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.apps import AppConfig
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,43 +11,54 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 import json
 
 from . import serializers
-from . import permissions
+from .permissions import *
 from . import models
 from factory import models as facmodels
 from factory.api import serializers as facserializers
 
 
-# @api_view(['POST'])
-# @permission_classes((AllowAny,))
-# def create_user(request):
-#     ser = serializers.UserSerializer(data=request.data)
-#     if ser.is_valid():
-#         ser.save()
-#         user = models.User.objects.get(username=request.data['username'])
-#         factory_member = facmodels.FactoryMember.objects.get(
-#             member=User.objects.get(username=request.data['username']).id)
-#         factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
-#         refresh_token = RefreshToken.for_user(user)
-#         access_token = AccessToken.for_user(user)
-#         final_json = {}
-#         for key in ser.data:
-#             final_json[key] = ser.data[key]
-#         final_json['refresh'] = str(refresh_token)
-#         final_json['access'] = str(access_token)
-#         final_json['allowed_factories'] = factory_member_ser['factory'].value
-#         if len(factory_member_ser['factory'].value) <= 1:
-#             final_json['allowed_sections'] = factory_member_ser['product_line_id'].value
-#         else:
-#             final_json['allowed_sections'] = 0
-#         json_ = json.dumps(final_json)
-#         json_loaded = json.loads(json_)
-#         return Response(json_loaded, status=status.HTTP_201_CREATED)
-#     else:
-#         return Response(ser.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['GET'])
+@permission_classes((AllowAny,))
+def first_user(request):
+    try:
+        user = User.objects.get(username='admin-sfs')
+    except:
+        ser = serializers.UserSerializer(
+            data={'username': 'admin-sfs', 'password': '123'})
+        if ser.is_valid():
+            ser.save()
+        else:
+            return print(ser.errors)
+    user = User.objects.get(username='admin-sfs')
+    user.is_superuser = 1
+    user.is_staff = 1
+    user.save()
+
+    factory_member = facmodels.FactoryMember.objects.get(member=user.id)
+    try:
+        factory = facmodels.Factory.objects.get(name='ALL')
+    except:
+        factory = facmodels.Factory(name='ALL', address='-', owner=user)
+        factory.save()
+        factory = facmodels.Factory.objects.get(name='ALL')
+    try:
+        product_line = facmodels.ProductLine.objects.get(name='ALL')
+    except:
+        product_line = facmodels.ProductLine(name='ALL', description='-', factory=factory)
+        product_line.save()
+        product_line = facmodels.ProductLine.objects.get(name='ALL')
+    factory_member.factory.clear()
+    factory_member.factory.add(factory)
+    factory_member.product_line.clear()
+    factory_member.product_line.add(product_line)
+    factory_member.save()
+
+    users = models.Users.objects.get(username=user.id)
+    return Response('OK.', status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
-@permission_classes((AllowAny,))
+@permission_classes((AllowAny, IsAuthenticated, IsAdmin))
 def create_user(request):
     ser = serializers.UserSerializer(data={'username': request.data['username'], 'password': request.data['password']})
     if ser.is_valid():
@@ -144,7 +156,7 @@ def login(request):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny, ])
+@permission_classes([AllowAny, IsAuthenticated])
 def profile(request):
     try:
         user = models.Users.objects.get(username_id=request.user.id)
@@ -162,7 +174,7 @@ def profile(request):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes((AllowAny,))
+@permission_classes((AllowAny, IsAuthenticated, IsAdmin))
 def users_list(request, pk):
     try:
         user = models.Users.objects.get(id=pk)
@@ -184,7 +196,7 @@ def users_list(request, pk):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes((AllowAny,))
+@permission_classes((AllowAny, IsAuthenticated, IsAdmin))
 def users_list_all(request):
     admin = request.user.id
     try:
@@ -212,7 +224,7 @@ def users_list_all(request):
 
 
 @api_view(['PUT'])
-@permission_classes([AllowAny, ])
+@permission_classes([AllowAny, IsAuthenticated])
 def update_user(request):
     try:
         user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
@@ -229,7 +241,7 @@ def update_user(request):
 
 
 @api_view(['PUT', 'DELETE'])
-@permission_classes([AllowAny, ])
+@permission_classes([AllowAny, IsAuthenticated, IsAdmin])
 def update_user_admin(request):
     try:
         user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
