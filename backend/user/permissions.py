@@ -21,12 +21,18 @@ class IsOwner(permissions.BasePermission):
 
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
-        factory_member = facmodels.FactoryMember.objects.get(member=request.user.id, product_line__name__icontains="ALL")
+        factory_member = facmodels.FactoryMember.objects.get(member=request.user.id,
+                                                             product_line__name__icontains="ALL")
         if factory_member:
             return True
         else:
             return False
 
+
 class IsActive(permissions.BasePermission):
     def has_permission(self, request, view):
-        factory_member = facmodels.FactoryMember.objects.get()
+        factory_member = facmodels.FactoryMember.objects.get(member=request.user.id)
+        if factory_member.status == 'ENABLED':
+            return True
+        else:
+            return False
