@@ -642,12 +642,12 @@ class LogDataView(generics.RetrieveAPIView):
         end_time = datetime.timestamp(
             parser.parse(self.request.query_params.get('end_time')))
 
-        # try:
-        data = cal_line_log(int(start_time),
-                            int(end_time),
-                            sensorInLines.mac_address)
-        # except:
-        # return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            data = cal_line_log(int(start_time),
+                                int(end_time),
+                                sensorInLines.mac_address)
+        except:
+            return Response({"detail": "Server No Respond!"}, status=status.HTTP_404_NOT_FOUND)
 
         report_response = []
         for log in data:
