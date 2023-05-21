@@ -24,7 +24,7 @@ def first_user(request):
         User.objects.get(username='admin-sfs')
     except:
         ser = serializers.UserSerializer(
-            data={'username': 'admin-sfs', 'password': '123'})
+            data={'username': 'admin-sfs', 'password': 'sfs1234'})
         if ser.is_valid():
             ser.save()
         else:
@@ -72,9 +72,17 @@ def create_user(request):
         try:
             admin = facmodels.FactoryMember.objects.get(member=User.objects.get(username=request.user.username))
             admin_ser = facserializers.FactoryMemberSerializers(admin)
-            if request.data['factory'] in admin_ser['factory'].value or admin_ser['factory'] == 'ALL':
+            print(admin_ser['factory'])
+            if request.data['factory'] in admin_ser['factory'].value or facmodels.Factory.objects.get(
+                    id=admin_ser['factory'].value[0]).name == 'ALL':
                 factory = facmodels.Factory.objects.get(id=request.data['factory'])
                 factory_member.factory.add(factory)
+            else:
+                user.delete()
+                return Response(
+                    {'error': f"authorization failed to create user for {request.data['factory']} factory!"},
+                    status=status.HTTP_400_BAD_REQUEST)
+
         except:
             user.delete()
             return Response({'error': 'factory not found!'}, status=status.HTTP_400_BAD_REQUEST)

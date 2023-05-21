@@ -282,7 +282,8 @@ class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show repor
                             else:
                                 sensor_data = gateway_data['data']
 
-                            sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data})
+                            sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data,
+                                                  "status": gateway_data['status']})
                             # print("sesnsor", SensorSerializer(sensor).data)
                     sensorRes = [{"id": sensorInLines.id, "name": sensorInLines.name, "pin": sensorInLines.port,
                                   "position": sensorInLines.position, "data": sensorDataRes}]
@@ -326,13 +327,14 @@ class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show repor
                             else:
                                 sensor_data = gateway_data['data']
 
-                            sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data})
+                            sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data,
+                                                  "status": gateway_data['status']})
                             # print("sesnsor", SensorSerializer(sensor).data)
-                    sensorRes = [{"id": sensorInLines.id, "name": sensorInLines.name, "pin": sensorInLines.port,
-                                  "position": sensorInLines.position, "data": sensorDataRes}]
-                    response.append((sensorRes))
-                return Response((response), status=status.HTTP_200_OK)
-            return Response(status=status.HTTP_200_OK)
+                        sensorRes = [{"id": sensorInLines.id, "name": sensorInLines.name, "pin": sensorInLines.port,
+                                      "position": sensorInLines.position, "data": sensorDataRes}]
+                        response.append((sensorRes))
+                    return Response((response), status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
         except Device.DoesNotExist:
             return Response({"detail": "Sensor Not found."}, status=status.HTTP_404_NOT_FOUND)
         except:
@@ -425,7 +427,7 @@ class PackageDegreeView(generics.RetrieveAPIView):
     def get_queryset(self):
         pass
 
-    @gzip_page
+    # @gzip_page
     def retrieve(self, request, *args, **kwargs):
         try:
             device_id = self.request.query_params.get('device_id')
@@ -465,7 +467,7 @@ class PackageDegreeView(generics.RetrieveAPIView):
             json_live = json.dumps(report_json)
             json_live_loaded = json.loads(json_live)
             report_response.append(json_live_loaded)
-        return Response(report_response, headers={'Content-Encoding': 'gzip'}, status=status.HTTP_200_OK)
+        return Response(report_response, status=status.HTTP_200_OK)
 
 
 class PackageDegreeGetExcelView(generics.RetrieveAPIView):
