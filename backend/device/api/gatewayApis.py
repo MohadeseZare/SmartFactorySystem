@@ -58,6 +58,8 @@
 
 
 """for main service"""
+
+
 def inlocal_server_live():
     return 'http://178.22.124.147:9017/gateway/livedata/'
 

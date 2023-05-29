@@ -193,7 +193,7 @@ class DetailDeviceView(generics.RetrieveUpdateDestroyAPIView):
 
 class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show report
     queryset = Device.objects.all()
-    permission_classes = [AllowAny, IsAuthenticated]
+    permission_classes = [AllowAny, ]
 
     def retrieve(self, request, *args, **kwargs):
         try:
@@ -273,18 +273,28 @@ class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show repor
                     sensor_data = -1
                     # sensorRes.append(SensorSerializer(sensor).data)
                     sensorDataRes = []
+                    i = 0
                     for gateway_data in live_datas:
-                        # print("in other for")
-                        if gateway_data['mac_addr'] == mac and gateway_data['pin'] == "1" and gateway_data[
-                            'position'] == str(position):
-                            if sensor_data == "None":
-                                sensor_data = -1
-                            else:
-                                sensor_data = gateway_data['data']
+                        if i % 2 == 0:
+                            # print("in other for")
+                            if gateway_data['mac_addr'] == mac and gateway_data['pin'] == "1" and gateway_data[
+                                'position'] == str(position):
+                                if sensor_data == "None":
+                                    sensor_data = -1
+                                else:
+                                    sensor_data = gateway_data['data']
+                            if live_datas[i + 1]['mac_addr'] == mac and live_datas[i + 1]['pin'] == "1" and \
+                                    live_datas[i + 1][
+                                        'position'] == str(position):
+                                fake_data = live_datas[i + 1]['data']
 
-                            sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data,
-                                                  "status": gateway_data['status']})
-                            # print("sesnsor", SensorSerializer(sensor).data)
+                                sensorDataRes.append({"time": gateway_data['sendDataTime'], "real_data": sensor_data,
+                                                      "fake_data": fake_data})
+                                # print("sesnsor", SensorSerializer(sensor).data)
+                            i += 1
+                        else:
+                            i += 1
+                            pass
                     sensorRes = [{"id": sensorInLines.id, "name": sensorInLines.name, "pin": sensorInLines.port,
                                   "position": sensorInLines.position, "data": sensorDataRes}]
                     # sensorRes.append(sensorDataRes)
@@ -319,17 +329,28 @@ class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show repor
                     position = sensorInLines.position
                     sensor_data = -1
                     sensorDataRes = []
+                    i = 0
                     for gateway_data in live_datas:
-                        if gateway_data['mac_addr'] == mac and gateway_data['pin'] == "1" and gateway_data[
-                            'position'] == str(position):
-                            if sensor_data == "None":
-                                sensor_data = -1
-                            else:
-                                sensor_data = gateway_data['data']
+                        if i % 2 == 0:
+                            # print("in other for")
+                            if gateway_data['mac_addr'] == mac and gateway_data['pin'] == "1" and gateway_data[
+                                'position'] == str(position):
+                                if sensor_data == "None":
+                                    sensor_data = -1
+                                else:
+                                    sensor_data = gateway_data['data']
+                            if live_datas[i + 1]['mac_addr'] == mac and live_datas[i + 1]['pin'] == "1" and \
+                                    live_datas[i + 1][
+                                        'position'] == str(position):
+                                fake_data = live_datas[i + 1]['data']
 
-                            sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data,
-                                                  "status": gateway_data['status']})
-                            # print("sesnsor", SensorSerializer(sensor).data)
+                                sensorDataRes.append({"time": gateway_data['sendDataTime'], "real_data": sensor_data,
+                                                      "fake_data": fake_data})
+                                # print("sesnsor", SensorSerializer(sensor).data)
+                            i += 1
+                        else:
+                            i += 1
+                            pass
                         sensorRes = [{"id": sensorInLines.id, "name": sensorInLines.name, "pin": sensorInLines.port,
                                       "position": sensorInLines.position, "data": sensorDataRes}]
                         response.append((sensorRes))
