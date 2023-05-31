@@ -12,6 +12,7 @@ urlpatterns = [
     # path('report/log/', .as_view(), name='api-report-log'),
     # path('receive-data/', .as_view(), name='api-receive-data'),
     path('live_data/', LiveDataView.as_view(), name='api-dashboard'),
+    path('fake_live_data/', FakeLiveView.as_view(), name='fake-live'),
     path('package_live_data/', PackageLiveView.as_view(), name='api-package-dashboard'),
 
     path('package_degree/', PackageDegreeView.as_view(), name='api-package-daily-static'),

@@ -4,6 +4,7 @@ from dateutil import parser
 from django.utils.dateparse import parse_datetime
 from django.http import HttpResponse, FileResponse
 from django.views.decorators.gzip import gzip_page
+from random import randint
 import json
 import requests
 from rest_framework import generics, renderers
@@ -399,6 +400,52 @@ class LiveDataView(generics.RetrieveAPIView):
         except:
             traceback.print_exc()
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class FakeLiveView(generics.RetrieveAPIView):
+    def get_queryset(self):
+        pass
+
+    def retrieve(self, request, *args, **kwargs):
+        product_line = self.request.query_params.get('product_line_id')
+        lst = []
+        time = datetime.now().isoformat()
+        if product_line == '1':
+            for i in range(1, 5):
+                response_json = dict({
+                    "live_data": randint(15, 300),
+                    "id": i,
+                    "name": f"بالمیل {i}",
+                    "mac_address": "8:3a:f2:93:59:f0",
+                    "port": "1",
+                    "position": 1,
+                    "data": "{\"test\":\"\"json\"}",
+                    "create": f"{time}Z",
+                    "update": f"{time}Z",
+                    "product_line_part": 1,
+                    "device_type": 2}, )
+                if i in range(3, 5):
+                    response_json['mac_address'] = "e0:e2:e6:d1:7d:10"
+                    response_json['data'] = "{}"
+                if i % 2 == 0:
+                    response_json['position'] = 2
+                lst.append(response_json)
+        elif product_line == "2":
+            for i in range(1, 6):
+                response_json = dict({
+                    "live_data": randint(15, 300),
+                    "id": i + 4,
+                    "name": f"بالمیل {i}",
+                    "mac_address": "e4:5f:01:7a:09:6e",
+                    "port": "1",
+                    "position": i,
+                    "data": "{}",
+                    "create": f"{time}Z",
+                    "update": f"{time}Z",
+                    "product_line_part": 2,
+                    "device_type": 2}, )
+                lst.append(response_json)
+        return Response(lst, status=status.HTTP_200_OK)
 
 
 class PackageLiveView(generics.RetrieveAPIView):
