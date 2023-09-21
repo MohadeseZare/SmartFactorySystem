@@ -57,8 +57,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.gzip.GZipMiddleware',  # This one does the job
-    # 'user.middleware.FilterOtherFactory'
 ]
 
 ROOT_URLCONF = 'SmartFactorySystem.urls'
@@ -146,7 +144,6 @@ ALLOWED_IP_ADDRESSES = [
     'http://localhost:8080',
     'http://127.0.0.1:9000',
     'http://localhost:3000',
-    'http://0.0.0.0:3000',
     'http://178.22.124.147:3000',
 ]
 CSRF_COOKIE_SAMESITE = 'Lax'

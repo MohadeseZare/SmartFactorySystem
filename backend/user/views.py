@@ -21,15 +21,15 @@ from factory.api import serializers as facserializers
 @permission_classes((AllowAny,))
 def first_user(request):
     try:
-        User.objects.get(username='admin-sfs')
+        user = User.objects.get(username='admin_sfs')
     except:
         ser = serializers.UserSerializer(
-            data={'username': 'admin-sfs', 'password': 'sfs1234'})
+            data={'username': 'admin_sfs', 'password': 'sfs1234'})
         if ser.is_valid():
             ser.save()
         else:
             return print(ser.errors)
-    user = User.objects.get(username='admin-sfs')
+    user = User.objects.get(username='admin_sfs')
     user.is_superuser = 1
     user.is_staff = 1
     user.save()
@@ -69,23 +69,15 @@ def create_user(request):
             final_json[key] = ser.data[key]
         factory_member = facmodels.FactoryMember.objects.get(
             member=user.id)
-        try:
-            admin = facmodels.FactoryMember.objects.get(member=User.objects.get(username=request.user.username))
-            admin_ser = facserializers.FactoryMemberSerializers(admin)
-            print(admin_ser['factory'])
-            if request.data['factory'] in admin_ser['factory'].value or facmodels.Factory.objects.get(
-                    id=admin_ser['factory'].value[0]).name == 'ALL':
-                factory = facmodels.Factory.objects.get(id=request.data['factory'])
-                factory_member.factory.add(factory)
-            else:
-                user.delete()
-                return Response(
-                    {'error': f"authorization failed to create user for {request.data['factory']} factory!"},
-                    status=status.HTTP_400_BAD_REQUEST)
-
-        except:
-            user.delete()
-            return Response({'error': 'factory not found!'}, status=status.HTTP_400_BAD_REQUEST)
+        # try:
+        admin = facmodels.FactoryMember.objects.get(member=User.objects.get(username=request.user.username))
+        admin_ser = facserializers.FactoryMemberSerializers(admin)
+        if request.data['factory'] in admin_ser['factory'].value:
+            factory = facmodels.Factory.objects.get(id=request.data['factory'])
+            factory_member.factory.add(factory)
+        # except:
+        #     user.delete()
+        #     return Response({'error': 'factory not found!'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             factory_member.product_line.set(request.data['sections'])
@@ -127,42 +119,38 @@ def login(request):
         users_user_ser = serializers.ProfileSerializer(users_user)
         factory_member = facmodels.FactoryMember.objects.get(member=user)
         factory_member_ser = facserializers.FactoryMemberSerializers(factory_member)
-        if factory_member_ser['status'].value == 'ENABLED':
+        refresh_token = RefreshToken.for_user(user)
+        access_token = AccessToken.for_user(user)
+        final_json = {}
+        for key in ser.data:
+            final_json[key] = ser.data[key]
+        final_json['first_name'] = users_user_ser['first_name'].value
+        final_json['last_name'] = users_user_ser['last_name'].value
+        final_json['refresh'] = str(refresh_token)
+        final_json['access'] = str(access_token)
+        final_json['allowed_factories'] = []
+        final_json['allowed_sections'] = []
+        try:
+            for factory in factory_member_ser['factory'].value:
+                final_json['allowed_factories'].append(factory)
 
-            refresh_token = RefreshToken.for_user(user)
-            access_token = AccessToken.for_user(user)
-            final_json = {}
-            for key in ser.data:
-                final_json[key] = ser.data[key]
-            final_json['first_name'] = users_user_ser['first_name'].value
-            final_json['last_name'] = users_user_ser['last_name'].value
-            final_json['refresh'] = str(refresh_token)
-            final_json['access'] = str(access_token)
+            if len(factory_member_ser['factory'].value) <= 1:
+                for section in factory_member_ser['product_line'].value:
+                    final_json['allowed_sections'].append(section)
+
+            else:
+                final_json['allowed_sections'] = 0
+        except:
             final_json['allowed_factories'] = []
             final_json['allowed_sections'] = []
-            try:
-                for factory in factory_member_ser['factory'].value:
-                    final_json['allowed_factories'].append(factory)
-
-                if len(factory_member_ser['factory'].value) <= 1:
-                    for section in factory_member_ser['product_line'].value:
-                        final_json['allowed_sections'].append(section)
-
-                else:
-                    final_json['allowed_sections'] = 0
-            except:
-                final_json['allowed_factories'] = []
-                final_json['allowed_sections'] = []
-            ALL = facmodels.ProductLine.objects.get(name='ALL').id
-            if ALL in factory_member_ser['product_line'].value:
-                final_json['is_admin'] = True
-            else:
-                final_json['is_admin'] = False
-            json_ = json.dumps(final_json)
-            json_loaded = json.loads(json_)
-            return Response(json_loaded, status=status.HTTP_200_OK)
+        ALL = facmodels.ProductLine.objects.get(name='ALL').id
+        if ALL in factory_member_ser['product_line'].value:
+            final_json['is_admin'] = True
         else:
-            return Response('User disabled.', status=status.HTTP_400_BAD_REQUEST)
+            final_json['is_admin'] = False
+        json_ = json.dumps(final_json)
+        json_loaded = json.loads(json_)
+        return Response(json_loaded, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'authentication failed'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -239,7 +227,7 @@ def users_list_all(request):
 @permission_classes([AllowAny, IsAuthenticated])
 def update_user(request):
     try:
-        user = models.Users.objects.get(username_id=request.user.id)
+        user = models.Users.objects.get(username_id=User.objects.get(username=request.data['username']).id)
     except:
         return Response({"error": "User Not Found!"}, status=status.HTTP_404_NOT_FOUND)
 
