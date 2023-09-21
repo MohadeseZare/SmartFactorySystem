@@ -23,7 +23,7 @@ class ProductLinePart2Admin(admin.ModelAdmin):
 
 
 class FactoryMemberAdmin(admin.ModelAdmin):
-    list_display = ('factory', 'member', 'status')
+    list_display = ('member', 'factories', 'product_lines', 'status')
 
 
 class SettingsAdmin(admin.ModelAdmin):

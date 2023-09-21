@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from factory.models import Factory, FactoryMember, Shift, ProductLine, ProductLinePart, ProductLinePart2, Settings, SettingsType
+from user import serializers as user
 
 
 class FactorySerializers(serializers.ModelSerializer):
@@ -12,6 +13,14 @@ class FactoryMemberSerializers(serializers.ModelSerializer):
     class Meta:
         model = FactoryMember
         fields = '__all__'
+
+
+class FactoryMemberAllSerializers(serializers.ModelSerializer):
+    member = user.UserSerializer()
+
+    class Meta:
+        model = FactoryMember
+        fields = ['member', 'status', 'product_line']
 
 
 class ProductLineSerializers(serializers.ModelSerializer):

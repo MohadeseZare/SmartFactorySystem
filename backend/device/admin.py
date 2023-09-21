@@ -16,11 +16,9 @@ class DeviceTypeAdmin(admin.ModelAdmin):
 
 class HistoryDataAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'device_id', 'data', 'date'
+     'id', 'device_id', 'data', 'date'
     )
 
-
-#  'product_line_part', 'device_type',
 
 admin.site.register(Device, DeviceAdmin)
 admin.site.register(DeviceType, DeviceTypeAdmin)
