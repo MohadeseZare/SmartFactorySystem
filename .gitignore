@@ -1,7 +1,6 @@
 .idea
 assets
 static
-venv
 asset-manifest.json
 center-radar.css
 data.json
