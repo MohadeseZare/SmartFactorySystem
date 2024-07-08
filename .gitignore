@@ -1,4 +1,5 @@
 .idea
+*env
 assets
 static
 asset-manifest.json
