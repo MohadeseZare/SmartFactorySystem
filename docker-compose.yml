@@ -1,0 +1,39 @@
+
+services:
+  # postgres db
+  postgres:
+    hostname: postgres
+    image: postgres:12.19
+    environment:
+      - POSTGRES_DB=backend
+      - POSTGRES_USER=backenduser
+      - POSTGRES_PASSWORD=backend123
+    ports:
+      - "5432:5432"
+    networks:
+      - main
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  # django codes
+  SmartFactorySystem:
+    hostname: SmartFactorySystem
+    image: rasam:v1  # custom image name and tag
+    command: ["/code/wait-for-it.sh", "postgres:5432", "--", "/code/start.sh"]
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - main
+    restart: always
+
+networks:
+  main:
+    external: true
+    name: rasamiot
+
+volumes:
+  postgres_data:
+    external: true
+    
