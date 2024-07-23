@@ -1067,10 +1067,12 @@ class GetDeviceChargeTimesView(generics.GenericAPIView):
                             print(result)
                             for log in result:
                                 print('..............................................',log)
-                                if log['incomplete_end'] == False:
+                                if not(log['incomplete_end']) and log['complete_status']:
                                     chargeTimes += 1
-                                else:
+                                elif log['incomplete_end']:
                                     incomplete += (float(log['time_difference']) / 28800)
+                                elif not(log['complete_status']):
+                                    incomplete += 1
                             charges = {
                                 'start_time': section_start,
                                 'end_time': section_end,
