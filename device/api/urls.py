@@ -10,7 +10,7 @@ urlpatterns = [
     # path('report/log/', .as_view(), name='api-report-log'),
     # path('receive-data/', .as_view(), name='api-receive-data'),
     path('live_data/', LiveDataView.as_view(), name='api-dashboard'),
-    
+
     path('package_live_data/', PackageLiveView.as_view(), name='api-package-dashboard'),
 
     path('package_degree/', PackageDegreeView.as_view(), name='api-package-daily-static'),
@@ -23,12 +23,14 @@ urlpatterns = [
     path('package_logdata_file/', LogDataGetExcelView.as_view(), name='api-package-log-data-excel'),
     path('package_error_frequency_file/', ErrorFrequencyGetExcelView.as_view(),
          name='api-package-error-frequency-excel'),
-         
-    path('device_view/',GetDevice.as_view(), name="device_view"),
-    path('add_error/', AddErrorView.as_view(), name='api-tile-add-error'),
-    path('charge_count_as_date_status/', GetDeviceChargeCountView.as_view(),
-         name='api-charge-count'),
-    path('charge_times/', GetDeviceChargeTimesView.as_view(), name= "api-charge-times")
 
+    path('device_view/', GetDevice.as_view(), name="device_view"),
+    path('add_error/', AddErrorView.as_view(), name='api-tile-add-error'),
+
+
+
+    path('charge_count_as_date_status/', GetDeviceChargeCountView.as_view(), name='api-charge-count'),
+    path('charge_times/', GetDeviceChargeTimesView.as_view(), name="api-charge-times"),
+    path('charge_each_device/', GetEachDeviceChargeCountView.as_view(), name="api-charge-each-device")
 
 ]

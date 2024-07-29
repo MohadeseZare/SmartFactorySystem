@@ -1,5 +1,5 @@
 import traceback
-from datetime import datetime , timedelta
+from datetime import datetime, timedelta
 from dateutil import parser
 from django.utils.dateparse import parse_datetime
 from django.http import HttpResponse, FileResponse
@@ -302,7 +302,8 @@ class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show repor
                         else:
                             sensor_data = gateway_data['data']
 
-                        sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data, "status": gateway_data['status']})
+                        sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data,
+                                              "status": gateway_data['status']})
                         # print("sesnsor", SensorSerializer(sensor).data)
                 sensorRes = [{"id": sensorInLines.id, "name": sensorInLines.name, "pin": sensorInLines.port,
                               "position": sensorInLines.position, "data": sensorDataRes}]
@@ -327,7 +328,7 @@ class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show repor
                         record_end = datetime.now().replace(tzinfo=utc)
                     p_start = input['usage_peek'][0]
                     p_end = input['usage_peek'][1]
-                    record_s, record_e = 0,0
+                    record_s, record_e = 0, 0
                     if record_start < request_start < request_end < record_end:
                         record_s = request_start
                         record_e = request_end
@@ -342,7 +343,7 @@ class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show repor
                         record_e = record_end
                     else:
                         pass
-                    
+
                     if record_s and record_e:
                         device = Device.objects.get(id=device_e)
                         if self.request.query_params.get('dur_time'):
@@ -423,55 +424,55 @@ class ReportDeviceView(generics.RetrieveAPIView):  # get the data for show repor
 
                 return Response({"problem"}, status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_200_OK)
-            # elif report_id == "3":
-                # response = []
-                # setting_time = Settings.objects.filter(factory=1).last()
-                # input = json.loads(setting_time.inputs)
-                # p_start = parse_datetime(input['peek_barq'][0])
-                # p_end = parse_datetime(input['peek_barq'][1])
-                # print(p_start, type(p_start), p_start.time())
-                # device_id = self.request.query_params.get('device_id').split(",")
-                # for device_e in device_id:
-                    # device = Device.objects.get(id=device_e)
-                    # if self.request.query_params.get('dur_time'):
+        # elif report_id == "3":
+        # response = []
+        # setting_time = Settings.objects.filter(factory=1).last()
+        # input = json.loads(setting_time.inputs)
+        # p_start = parse_datetime(input['peek_barq'][0])
+        # p_end = parse_datetime(input['peek_barq'][1])
+        # print(p_start, type(p_start), p_start.time())
+        # device_id = self.request.query_params.get('device_id').split(",")
+        # for device_e in device_id:
+        # device = Device.objects.get(id=device_e)
+        # if self.request.query_params.get('dur_time'):
 
-                        # live_datas = cal_logs_aggrate_special(self.request.query_params.get('start_time'),
-                                                              # self.request.query_params.get('end_time'),
-                                                              # self.request.query_params.get('dur_time'),
-                                                              # device.mac_address, device.port, device.position,
-                                                              # device.device_type.id, report_id, p_start, p_end)
-                    # else:
-                        # live_datas = cal_logs(self.request.query_params.get('start_time'),
-                                              # self.request.query_params.get('end_time'), device.mac_address, device
-                                              # .port, device.position, device.device_type.id)
-                    # # print("lives_data", live_datas)
-                    # sensorInLines = Device.objects.get(id=device_e)
-                    # sensorRes = []
-                    # mac = sensorInLines.mac_address
-                    # pin = sensorInLines.port
-                    # position = sensorInLines.position
-                    # sensor_data = -1
-                    # sensorDataRes = []
-                    # for gateway_data in live_datas:
-                        # if gateway_data['mac_addr'] == mac and gateway_data['pin'] == "1" and gateway_data[
-                            # 'position'] == str(position):
-                            # if sensor_data == "None":
-                                # sensor_data = -1
-                            # else:
-                                # sensor_data = gateway_data['data']
+        # live_datas = cal_logs_aggrate_special(self.request.query_params.get('start_time'),
+        # self.request.query_params.get('end_time'),
+        # self.request.query_params.get('dur_time'),
+        # device.mac_address, device.port, device.position,
+        # device.device_type.id, report_id, p_start, p_end)
+        # else:
+        # live_datas = cal_logs(self.request.query_params.get('start_time'),
+        # self.request.query_params.get('end_time'), device.mac_address, device
+        # .port, device.position, device.device_type.id)
+        # # print("lives_data", live_datas)
+        # sensorInLines = Device.objects.get(id=device_e)
+        # sensorRes = []
+        # mac = sensorInLines.mac_address
+        # pin = sensorInLines.port
+        # position = sensorInLines.position
+        # sensor_data = -1
+        # sensorDataRes = []
+        # for gateway_data in live_datas:
+        # if gateway_data['mac_addr'] == mac and gateway_data['pin'] == "1" and gateway_data[
+        # 'position'] == str(position):
+        # if sensor_data == "None":
+        # sensor_data = -1
+        # else:
+        # sensor_data = gateway_data['data']
 
-                            # sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data, "status": gateway_data['status']})
-                            # # print("sesnsor", SensorSerializer(sensor).data)
-                    # sensorRes = [{"id": sensorInLines.id, "name": sensorInLines.name, "pin": sensorInLines.port,
-                                  # "position": sensorInLines.position, "data": sensorDataRes}]
-                    # response.append((sensorRes))
-                # return Response((response), status=status.HTTP_200_OK)
-            # return Response(status=status.HTTP_200_OK)
+        # sensorDataRes.append({"time": gateway_data['sendDataTime'], "sensor_data": sensor_data, "status": gateway_data['status']})
+        # # print("sesnsor", SensorSerializer(sensor).data)
+        # sensorRes = [{"id": sensorInLines.id, "name": sensorInLines.name, "pin": sensorInLines.port,
+        # "position": sensorInLines.position, "data": sensorDataRes}]
+        # response.append((sensorRes))
+        # return Response((response), status=status.HTTP_200_OK)
+        # return Response(status=status.HTTP_200_OK)
         # except Device.DoesNotExist:
-            # return Response({"detail": "Sensor Not found."}, status=status.HTTP_404_NOT_FOUND)
+        # return Response({"detail": "Sensor Not found."}, status=status.HTTP_404_NOT_FOUND)
         # except:
-            # traceback.print_exc()
-            # return Response({"problem"}, status=status.HTTP_404_NOT_FOUND)
+        # traceback.print_exc()
+        # return Response({"problem"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class LiveDataView(generics.RetrieveAPIView):
@@ -583,7 +584,8 @@ class PackageDegreeView(generics.RetrieveAPIView):
                       "degree6": None}
         for log in data:
             sum = 0
-            report_json = {'line_id': sensorInLines.id, 'line_name': sensorInLines.name, 'time': datetime.timestamp(parser.parse(log['DataTime']))}
+            report_json = {'line_id': sensorInLines.id, 'line_name': sensorInLines.name,
+                           'time': datetime.timestamp(parser.parse(log['DataTime']))}
             if self.request.query_params.get('report') == '1':
                 for degree_id in degree:
                     report_json[f'degree{degree_id}'] = log[f'degree{degree_id}']
@@ -644,7 +646,8 @@ class PackageDegreeGetExcelView(generics.RetrieveAPIView):
         report_response = []
         sum_dict = {'degree1': 0, 'degree2': 0, 'degree3': 0, 'degree4': 0, 'degree5': 0, 'degree6': 0, }
         for log in data:
-            report_json = {'line_id': sensorInLines.id, 'line_name': sensorInLines.name, 'time': datetime.timestamp(parser.parse(log['DataTime']))}
+            report_json = {'line_id': sensorInLines.id, 'line_name': sensorInLines.name,
+                           'time': datetime.timestamp(parser.parse(log['DataTime']))}
             degree_sum = 0
             for degree_id in degree:
                 report_json[f'degree{degree_id}'] = log[f'degree{degree_id}']
@@ -703,7 +706,6 @@ class StoppageTimeView(generics.RetrieveAPIView):
                            'packaging_stoppage_time': report['stoppage_time_packaging']
                            }
 
-
             json_live = json.dumps(report_json)
             json_live_loaded = json.loads(json_live)
             report_response.append(json_live_loaded)
@@ -746,7 +748,6 @@ class StoppageTimeGetExcelView(generics.RetrieveAPIView):
                            'packaging_stoppage_time': report['stoppage_time_packaging']
                            }
 
-
             report_response.append(report_json)
 
         df = pd.DataFrame(data=report_response)
@@ -757,6 +758,8 @@ class StoppageTimeGetExcelView(generics.RetrieveAPIView):
 
 
 '''logData json and excel file view '''
+
+
 class LogDataView(generics.RetrieveAPIView):
     def get_queryset(self):
         pass
@@ -793,11 +796,11 @@ class LogDataView(generics.RetrieveAPIView):
                            'stoppage_time': log['diff_time']
                            }
 
-
             json_live = json.dumps(report_json)
             json_live_loaded = json.loads(json_live)
             report_response.append(json_live_loaded)
         return Response(report_response, status=status.HTTP_200_OK)
+
 
 class LogDataGetExcelView(generics.RetrieveAPIView):
     def get_queryset(self):
@@ -831,14 +834,13 @@ class LogDataGetExcelView(generics.RetrieveAPIView):
         for report in data:
             report_json = {'line_id': sensorInLines.id,
                            'line_name': sensorInLines.name,
-                           'start_time': log['start_time'],
-                           'end_time': log['end_time'],
-                           'error_id': log['code'],
-                           'error_section': log['section'],
-                           'error_description': log['description'],
-                           'stoppage_time': log['diff_time']
+                           'start_time': report['start_time'],
+                           'end_time': report['end_time'],
+                           'error_id': report['code'],
+                           'error_section': report['section'],
+                           'error_description': report['description'],
+                           'stoppage_time': report['diff_time']
                            }
-
 
             report_response.append(report_json)
 
@@ -969,17 +971,107 @@ class GetDevice(generics.RetrieveAPIView):
 
     def get_queryset(self):
         pass
+
     def retrieve(self, request, *args, **kwargs):
         mac = self.request.query_params.get('mac_addr')
         port = self.request.query_params.get('pin')
         position = self.request.query_params.get('position')
-        queryset = Device.objects.get(mac_address= mac, port= port, position=position)
+        queryset = Device.objects.get(mac_address=mac, port=port, position=position)
         ser = DeviceSerializer(queryset)
-        return Response(ser.data,status=status.HTTP_200_OK)
+        return Response(ser.data, status=status.HTTP_200_OK)
+
+
+class GetEachDeviceChargeCountView(generics.GenericAPIView):
+    serializer_class = DeviceSerializer
+
+    def post(self, request):
+        data = request.query_params
+
+        if ('id' in data) and ('start_time' in data) and ('end_time' in data):
+            if data['id'] and data['start_time'] and data['end_time']:
+                final_result = []
+                device_ids = [int(device_id) for device_id in
+                              data.get('id').strip('[]').split(',')]  # Split the IDs and convert to integers
+                print(device_ids)
+
+                start_time = datetime.strptime(data.get('start_time'), '%Y-%m-%d %H:%M:%S')
+                end_time = datetime.strptime(data.get('end_time'), '%Y-%m-%d %H:%M:%S')
+                morning_shift = datetime.strptime('02:30:00', "%H:%M:%S").replace(tzinfo=utc).time()
+                noon_shift = datetime.strptime('10:30:00', "%H:%M:%S").replace(tzinfo=utc).time()
+                night_shift = datetime.strptime('18:30:00', "%H:%M:%S").replace(tzinfo=utc).time()
+                print(morning_shift, noon_shift, night_shift)
+                for each_id in device_ids:
+                    try:
+                        queryset = Device.objects.get(id=each_id)
+                        mac_address = queryset.mac_address
+                        pin = queryset.port
+                        position = queryset.position
+                        type_data = queryset.device_type.id
+                        data = {
+                            'device_name': queryset.name,
+                            'mac_address': mac_address,
+                            'pin': pin,
+                            'port': position,
+                            'type_data': type_data,
+                        }
+                        try:
+                            result = get_charge_counts_as_date_status(mac_address, pin, position, type_data, start_time,
+                                                                      end_time)
+                        except:
+                            return Response({'msg': 'cant get result from gateway'})
+                        json_results = {}
+                        for eachResult in result:
+                            eachResultTime = datetime.fromisoformat(eachResult['charge_start_time'])
+                            eachResultTime.replace(tzinfo=utc)
+                            if morning_shift < datetime.time(eachResultTime) < noon_shift:
+                                eachResultTime = eachResultTime.replace(hour=morning_shift.hour,
+                                                                        minute=morning_shift.minute,
+                                                                        second=morning_shift.second, microsecond=0)
+                            elif noon_shift < datetime.time(eachResultTime) < night_shift:
+                                eachResultTime = eachResultTime.replace(hour=noon_shift.hour, minute=noon_shift.minute,
+                                                                        second=noon_shift.second, microsecond=0)
+                            elif datetime.time(eachResultTime) > night_shift or datetime.time(
+                                    eachResultTime) < morning_shift:
+                                eachResultTime = eachResultTime.replace(hour=night_shift.hour,
+                                                                        minute=night_shift.minute,
+                                                                        second=night_shift.second, microsecond=0)
+
+                            eachResultTime = datetime.isoformat(eachResultTime) + "Z"
+
+                            if eachResultTime in json_results.keys():
+                                json_results[eachResultTime].append(eachResult)
+                            else:
+                                json_results[eachResultTime] = [eachResult]
+
+                        for eachResult in json_results.keys():
+                            if len(json_results[eachResult]) < 2:
+                                for i in range(2 - len(json_results[eachResult])):
+                                    zeroData = {
+                                        "time_difference": "0",
+                                        "charge_start_time": eachResult,
+                                        "charge_end_time": eachResult,
+                                        "incomplete_end": False,
+                                        "complete_status": True,
+                                        "stop_between_charge": 0
+                                    }
+                                    print(json_results[eachResult])
+                                    json_results[eachResult].append(zeroData)
+
+                        data['charges'] = json_results
+                        final_result.append(data)
+                    except Device.DoesNotExist:
+                        return Response({'msg': 'No device found'}, status=status.HTTP_404_NOT_FOUND)
+
+                return Response(final_result)
+
+            return Response({'msg': 'Invalid request data'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'msg': 'Missing required fields in request data'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetDeviceChargeCountView(generics.GenericAPIView):
     serializer_class = DeviceSerializer
+
     def post(self, request):
         data = request.data
         print(data)
@@ -1026,10 +1118,9 @@ class GetDeviceChargeCountView(generics.GenericAPIView):
         return Response({'msg': 'Missing required fields in request data'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 class GetDeviceChargeTimesView(generics.GenericAPIView):
     serializer_class = DeviceSerializer
+
     def post(self, request):
         data = request.data
         print(data)
@@ -1038,7 +1129,7 @@ class GetDeviceChargeTimesView(generics.GenericAPIView):
                 finalLst = []
                 try:
                     ids = [int(device_id) for device_id in
-                              data.get('id').strip('[]').split(',')] 
+                           data.get('id').strip('[]').split(',')]
                     for id in ids:
                         queryset = Device.objects.get(id=id)
                         mac_address = queryset.mac_address
@@ -1061,17 +1152,17 @@ class GetDeviceChargeTimesView(generics.GenericAPIView):
 
                             # try:
                             result = get_charge_counts_as_date_status(mac_address, pin, position, type_data,
-                                                                      section_start, section_end ,complete_status)
+                                                                      section_start, section_end, complete_status)
                             chargeTimes = 0
                             incomplete = 0
                             print(result)
                             for log in result:
-                                print('..............................................',log)
-                                if not(log['incomplete_end']) and log['complete_status']:
+                                print('..............................................', log)
+                                if not (log['incomplete_end']) and log['complete_status']:
                                     chargeTimes += 1
                                 elif log['incomplete_end']:
                                     incomplete += (float(log['time_difference']) / 28800)
-                                elif not(log['complete_status']):
+                                elif not (log['complete_status']):
                                     incomplete += 1
                             charges = {
                                 'start_time': section_start,
@@ -1084,8 +1175,8 @@ class GetDeviceChargeTimesView(generics.GenericAPIView):
                             section_end = section_end + timedelta(days=1)
 
                             # except:
-                                # return Response({'msg': 'cant get result from gateway'},
-                                                # status=status.HTTP_400_BAD_REQUEST)
+                            # return Response({'msg': 'cant get result from gateway'},
+                            # status=status.HTTP_400_BAD_REQUEST)
                         finalLst.append(end_result)
                     return Response(finalLst, status=status.HTTP_200_OK)
 
