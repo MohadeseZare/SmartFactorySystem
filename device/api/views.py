@@ -984,7 +984,7 @@ class GetDevice(generics.RetrieveAPIView):
 class GetEachDeviceChargeCountView(generics.GenericAPIView):
     serializer_class = DeviceSerializer
 
-    def post(self, request):
+    def get(self, request):
         data = request.query_params
 
         if ('id' in data) and ('start_time' in data) and ('end_time' in data):
@@ -1035,10 +1035,13 @@ class GetEachDeviceChargeCountView(generics.GenericAPIView):
                                 eachResultTime = eachResultTime.replace(hour=night_shift.hour,
                                                                         minute=night_shift.minute,
                                                                         second=night_shift.second, microsecond=0)
+                            plusIndex = eachResultTime.isoformat(timespec='seconds').find("+")
+                            if plusIndex != -1 :
+                                eachResultTime = eachResultTime.isoformat(timespec='seconds')[:plusIndex] + "Z"
+                            else:
+                                eachResultTime = eachResultTime.isoformat(timespec='seconds') + "Z"
 
-                            eachResultTime = datetime.isoformat(eachResultTime) + "Z"
-
-                            if eachResultTime in json_results.keys():
+                            if eachResultTime in json_results.values():
                                 json_results[eachResultTime].append(eachResult)
                             else:
                                 json_results[eachResultTime] = [eachResult]
